@@ -446,6 +446,14 @@ async function createMidtransTransaction(orderId, amount, customerName) {
 // Checkout with Midtrans
 // ============================================
 
+// Store current transaction data for invoice
+let currentTransaction = {
+    orderId: '',
+    amount: 0,
+    items: [],
+    date: ''
+};
+
 checkoutBtn.addEventListener('click', async (event) => {
     // Prevent default button behavior
     event.preventDefault();
@@ -465,6 +473,20 @@ checkoutBtn.addEventListener('click', async (event) => {
 
     // Generate unique order ID
     const orderId = `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    // Store transaction data for invoice
+    currentTransaction = {
+        orderId: orderId,
+        amount: totalAmount,
+        items: [...cart],
+        date: new Date().toLocaleString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+    };
 
     // Get customer name (could be from user input in a real app)
     const customerName = 'Customer'; // In production, get from user input
@@ -497,8 +519,7 @@ checkoutBtn.addEventListener('click', async (event) => {
                 window.snap.pay(transaction.token, {
                     onSuccess: function(result) {
                         console.log('Payment success:', result);
-                        showToast('Payment successful! Thank you for your order.', 'success');
-                        clearCart();
+                        handlePaymentSuccess(result, orderId, totalAmount);
                     },
                     onPending: function(result) {
                         console.log('Payment pending:', result);
@@ -510,7 +531,6 @@ checkoutBtn.addEventListener('click', async (event) => {
                     },
                     onClose: function() {
                         console.log('Payment popup closed');
-                        showToast('Payment was cancelled', 'info');
                     }
                 });
             } else {
@@ -518,13 +538,11 @@ checkoutBtn.addEventListener('click', async (event) => {
                 if (transaction.redirect_url) {
                     window.location.href = transaction.redirect_url;
                 } else {
-                    showToast('Payment successful! Thank you for your order.', 'success');
-                    clearCart();
+                    handlePaymentSuccess({}, orderId, totalAmount);
                 }
             }
         } else {
-            showToast('Payment successful! Thank you for your order.', 'success');
-            clearCart();
+            handlePaymentSuccess({}, orderId, totalAmount);
         }
 
         // Reset button state
@@ -542,6 +560,175 @@ checkoutBtn.addEventListener('click', async (event) => {
         checkoutBtn.textContent = 'Checkout with Midtrans';
     }
 });
+
+// Handle successful payment
+function handlePaymentSuccess(result, orderId, amount) {
+    // Close cart modal
+    closeCartModal();
+
+    // Show success modal with invoice
+    showPaymentSuccessModal(orderId, amount);
+
+    // Clear cart
+    cart = [];
+    saveCart();
+    updateCartUI();
+}
+
+// Show payment success modal with invoice
+function showPaymentSuccessModal(orderId, amount) {
+    // Create modal HTML
+    const modalHTML = `
+        <div id="paymentSuccessModal" class="payment-modal">
+            <div class="payment-modal-content">
+                <div class="payment-success-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="payment-success-title">Payment Successful!</h2>
+                <p class="payment-success-message">Thank you for your order</p>
+
+                <div class="invoice">
+                    <h3 class="invoice-title">Invoice</h3>
+                    <div class="invoice-details">
+                        <p><strong>Order ID:</strong> ${orderId}</p>
+                        <p><strong>Date:</strong> ${currentTransaction.date}</p>
+                    </div>
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${currentTransaction.items.map(item => `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2"><strong>Total</strong></td>
+                                <td><strong>Rp ${amount.toLocaleString('id-ID')}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="payment-modal-actions">
+                    <button onclick="printInvoice()" class="btn-print-invoice">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print Invoice
+                    </button>
+                    <button onclick="closePaymentModalAndRedirect()" class="btn-back-home">
+                        Back to Home
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('paymentSuccessModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Show modal with animation
+    setTimeout(() => {
+        document.getElementById('paymentSuccessModal').classList.add('active');
+    }, 100);
+}
+
+// Close payment modal and redirect to home
+function closePaymentModalAndRedirect() {
+    const modal = document.getElementById('paymentSuccessModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.remove();
+            // Redirect to home page
+            window.location.href = window.location.origin + window.location.pathname;
+        }, 300);
+    } else {
+        window.location.href = window.location.origin + window.location.pathname;
+    }
+}
+
+// Print invoice function
+function printInvoice() {
+    const printContent = `
+        <html>
+        <head>
+            <title>Invoice - ${currentTransaction.orderId}</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                .invoice-header { text-align: center; margin-bottom: 20px; }
+                .invoice-info { margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                .total { font-weight: bold; font-size: 18px; }
+            </style>
+        </head>
+        <body>
+            <div class="invoice-header">
+                <h1>Snack Store</h1>
+                <p>Invoice</p>
+            </div>
+            <div class="invoice-info">
+                <p><strong>Order ID:</strong> ${currentTransaction.orderId}</p>
+                <p><strong>Date:</strong> ${currentTransaction.date}</p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${currentTransaction.items.map(item => `
+                        <tr>
+                            <td>${item.name}</td>
+                            <td>${item.quantity}</td>
+                            <td>Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td><strong>Rp ${currentTransaction.amount.toLocaleString('id-ID')}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </body>
+        </html>
+    `;
+
+    // Open print window
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Make functions available globally
+window.closePaymentModalAndRedirect = closePaymentModalAndRedirect;
+window.printInvoice = printInvoice;
 
 // Clear cart after successful checkout
 function clearCart() {
