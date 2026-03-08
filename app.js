@@ -17,8 +17,8 @@ const firebaseConfig = {
     measurementId: "G-FJE4YQFG6Y"
 };
 
-// Vercel API URL - Replace with your deployed URL
-const API_URL = 'https://snack-store.vercel.app/api/create-transaction';
+// Vercel API URL
+const API_URL = 'https://snack-store-psi.vercel.app/api/create-transaction';
 
 // ============================================
 // App State
