@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snack Store - Your Favorite Snacks</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Midtrans Snap -->
+    <script src="https://app.midtrans.com/snap/snap.js" data-client-key="Mid-client-dVZpPZF0zI2M8Smj"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-content">
+                <!-- Logo -->
+                <div class="logo">
+                    <span class="logo-text">🍿 Snack Store</span>
+                </div>
+
+                <!-- Cart Icon -->
+                <button id="cartButton" class="cart-button" title="Open Cart">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span id="cartCount" class="cart-badge">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1 class="hero-title">Welcome to Snack Store</h1>
+            <p class="hero-subtitle">Discover our delicious collection of snacks</p>
+        </section>
+
+        <!-- Products Section -->
+        <section class="products-section">
+            <h2 class="section-title">Our Products</h2>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="productsGrid" class="products-grid hidden">
+                <!-- Products will be dynamically inserted here -->
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="state-message error hidden">
+                <p>Failed to load products. Please try again later.</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="state-message empty hidden">
+                <p>No products available at the moment.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p class="footer-text">© 2024 Snack Store. All rights reserved.</p>
+            <p class="footer-text">Made with ❤️ for snack lovers</p>
+        </div>
+    </footer>
+
+    <!-- Cart Modal Overlay (Outside cartModal) -->
+    <div id="cartOverlay" class="modal-overlay"></div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="cart-modal">
+        <!-- Cart Panel -->
+        <div class="cart-panel">
+            <div class="cart-container">
+                <!-- Cart Header -->
+                <div class="cart-header">
+                    <h2 class="cart-title">🛒 Your Cart</h2>
+                    <button id="closeCart" class="btn-close" title="Close Cart">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Cart Items -->
+                <div id="cartItems" class="cart-items">
+                    <!-- Cart items will be dynamically inserted here -->
+                </div>
+
+                <!-- Empty Cart Message -->
+                <div id="emptyCart" class="cart-empty hidden">
+                    <p>Your cart is empty</p>
+                </div>
+
+                <!-- Cart Footer -->
+                <div class="cart-footer">
+                    <div class="cart-total">
+                        <span class="cart-total-label">Total:</span>
+                        <span id="cartTotal" class="cart-total-value">Rp 0</span>
+                    </div>
+
+                    <!-- Checkout Button -->
+                    <button id="checkoutBtn" class="btn-checkout">
+                        Checkout with Midtrans
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- External JavaScript -->
+    <script src="app.js"></script>
+</body>
+
+</html>
