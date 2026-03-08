@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Products - Snack Store Admin</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #374151;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-box li {
+            color: #6b7280;
+            padding: 5px 0;
+            font-size: 14px;
+        }
+
+        .info-box li::before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .btn-upload {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-upload:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            display: block;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+
+        .status.loading {
+            background: #dbeafe;
+            color: #1e40af;
+            display: block;
+        }
+
+        .products-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .products-list h3 {
+            color: #374151;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .product-name {
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .product-price {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📦 Upload 50 Produk Snack</h1>
+        <p class="subtitle">Klik tombol di bawah untuk mengupload semua produk ke Firestore</p>
+
+        <div class="info-box">
+            <h3>Produk yang akan diupload:</h3>
+            <ul>
+                <li>50 produk snack Indonesia</li>
+                <li>Gambar otomatis dari picsum.photos</li>
+                <li>Harga dan deskripsi lengkap</li>
+                <li>Stock tersedia</li>
+                <li>Kategori: Keripik, Gorengan, Kue, dll</li>
+            </ul>
+        </div>
+
+        <button id="uploadBtn" class="btn-upload" onclick="startUpload()">
+            🚀 Upload Semua Produk
+        </button>
+
+        <div class="progress" id="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="products-list" id="productsList"></div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSNGfBIXPIcs0obQC94caWHBjVpIQ29cc",
+            authDomain: "snack-store-389a6.firebaseapp.com",
+            projectId: "snack-store-389a6",
+            storageBucket: "snack-store-389a6.firebasestorage.app",
+            messagingSenderId: "183786840719",
+            appId: "1:183786840719:web:ae399302e4f4da9067c6fa",
+            measurementId: "G-FJE4YQFG6Y"
+        };
+
+        // Indonesian Snacks Data (50 products)
+        const snackProducts = [{
+            name: "Keripik Pisang",
+            price: 15000,
+            image: "https://picsum.photos/400?random=1",
+            description: "Renyah dan gurih, dibuat dari pisang pilihan yang dipotong tipis dan digoreng sempurna.",
+            stock: 50,
+            category: "Keripik"
+        }, {
+            name: "Basreng",
+            price: 12000,
+            image: "https://picsum.photos/400?random=2",
+            description: "Ikan lele goreng dengan bumbu pedas meresap.",
+            stock: 45,
+            category: "Gorengan"
+        }, {
+            name: "Makaroni Pedas",
+            price: 10000,
+            image: "https://picsum.photos/400?random=3",
+            description: "Makaroni gurih dengan tingkat kepedasan yang dapat disesuaikan.",
+            stock: 60,
+            category: "Mie"
+        }, {
+            name: "Seblak Kering",
+            price: 18000,
+            image: "https://picsum.photos/400?random=4",
+            description: "Kerupuk seblak kering dengan bumbu pedas dan kencur yang khas.",
+            stock: 40,
+            category: "Kerupuk"
+        }, {
+            name: "Keripik Singkong",
+            price: 12000,
+            image: "https://picsum.photos/400?random=5",
+            description: "Keripik dari singkong segar yang digoreng hingga renyah.",
+            stock: 55,
+            category: "Keripik"
+        }, {
+            name: "Keripik Kentang",
+            price: 14000,
+            image: "https://picsum.photos/400?random=6",
+            description: "Kentang iris tipis digoreng renyah.",
+            stock: 50,
+            category: "Keripik"
+        }, {
+            name: "Kerupuk Udang",
+            price: 16000,
+            image: "https://picsum.photos/400?random=7",
+            description: "Kerupuk tradisional dari udang segar.",
+            stock: 35,
+            category: "Kerupuk"
+        }, {
+            name: "Kerupuk Mie",
+            price: 8000,
+            image: "https://picsum.photos/400?random=8",
+            description: "Kerupuk dari mie kuning digoreng hingga mengembang.",
+            stock: 70,
+            category: "Kerupuk"
+        }, {
+            name: "Kacang Goreng",
+            price: 15000,
+            image: "https://picsum.photos/400?random=9",
+            description: "Kacang tanah goreng dengan balutan bawang dan garam.",
+            stock: 45,
+            category: "Kacang"
+        }, {
+            name: "Kacang Renyah",
+            price: 18000,
+            image: "https://picsum.photos/400?random=10",
+            description: "Kacang mete atau kacang tanah dengan tekstur renyah.",
+            stock: 40,
+            category: "Kacang"
+        }, {
+            name: "Pisang Goreng",
+            price: 12000,
+            image: "https://picsum.photos/400?random=11",
+            description: "Pisang goreng golden crispy dengan taburan gula aren.",
+            stock: 30,
+            category: "Gorengan"
+        }, {
+            name: "Lemper",
+            price: 10000,
+            image: "https://picsum.photos/400?random=12",
+            description: "Ketan isi ayam atau daging yang dibungkus daun pandan.",
+            stock: 25,
+            category: "Makanan Ringan"
+        }, {
+            name: "Kue Lumpur",
+            price: 8000,
+            image: "https://picsum.photos/400?random=13",
+            description: "Kue lembut dengan topping parut.",
+            stock: 20,
+            category: "Kue"
+        }, {
+            name: "Risoles",
+            price: 12000,
+            image: "https://picsum.photos/400?random=14",
+            description: "Rolade kulit tipis isi Ragout.",
+            stock: 30,
+            category: "Makanan Ringan"
+        }, {
+            name: "Martabak Manis",
+            price: 25000,
+            image: "https://picsum.photos/400?random=15",
+            description: "Martabak Teflon dengan topping cokelat,keju, atau kacang.",
+            stock: 15,
+            category: "Kue"
+        }, {
+            name: "Donat",
+            price: 10000,
+            image: "https://picsum.photos/400?random=16",
+            description: "Donat lembut dengan glazur cokelat atau gula halus.",
+            stock: 35,
+            category: "Kue"
+        }, {
+            name: "Nastar",
+            price: 35000,
+            image: "https://picsum.photos/400?random=17",
+            description: "Kue nastar klasik dengan isian nanas.",
+            stock: 25,
+            category: "Kue"
+        }, {
+            name: "Kue Ketan Hitam",
+            price: 20000,
+            image: "https://picsum.photos/400?random=18",
+            description: "Kue ketan hitam lembut dengan santan.",
+            stock: 20,
+            category: "Kue"
+        }, {
+            name: "Lapis Legit",
+            price: 45000,
+            image: "https://picsum.photos/400?random=19",
+            description: "Kue lapis legit dengan 18-25 lapisan.",
+            stock: 10,
+            category: "Kue"
+        }, {
+            name: "Putri Salju",
+            price: 30000,
+            image: "https://picsum.photos/400?random=20",
+            description: "Kue kering taburan gula halus seperti salju.",
+            stock: 30,
+            category: "Kue"
+        }, {
+            name: "Kerupuk Bawang",
+            price: 12000,
+            image: "https://picsum.photos/400?random=21",
+            description: "Kerupuk udang dengan taburan bawang.",
+            stock: 50,
+            category: "Kerupuk"
+        }, {
+            name: "Kerupuk Kulit",
+            price: 15000,
+            image: "https://picsum.photos/400?random=22",
+            description: "Kerupuk dari kulit kerbau digoreng renyah.",
+            stock: 40,
+            category: "Kerupuk"
+        }, {
+            name: "Tahu Bulat",
+            price: 5000,
+            image: "https://picsum.photos/400?random=23",
+            description: "Tahu digoreng dadakan dengan taburan cabe dan garam.",
+            stock: 100,
+            category: "Gorengan"
+        }, {
+            name: "Tahu Sumedang",
+            price: 8000,
+            image: "https://picsum.photos/400?random=24",
+            description: "Tahu goreng khas Sumedang dengan tekstur porous.",
+            stock: 45,
+            category: "Gorengan"
+        }, {
+            name: "Tempe Goreng",
+            price: 8000,
+            image: "https://picsum.photos/400?random=25",
+            description: "Tempe digoreng dengan bumbu sederhana.",
+            stock: 50,
+            category: "Gorengan"
+        }, {
+            name: "Cireng",
+            price: 10000,
+            image: "https://picsum.photos/400?random=26",
+            description: "Aci digoreng hingga kenyal.",
+            stock: 40,
+            category: "Gorengan"
+        }, {
+            name: "Pentol",
+            price: 15000,
+            image: "https://picsum.photos/400?random=27",
+            description: "Bola-bola aci kenyal dengan topping sambal.",
+            stock: 35,
+            category: "Makanan Ringan"
+        }, {
+            name: "Batagor",
+            price: 18000,
+            image: "https://picsum.photos/400?random=28",
+            description: "Baso tahu gorengan dengan siraman kacang.",
+            stock: 30,
+            category: "Gorengan"
+        }, {
+            name: "Siomay",
+            price: 15000,
+            image: "https://picsum.photos/400?random=29",
+            description: "Dimsum khas Bandung dengan sambal kacang.",
+            stock: 35,
+            category: "Makanan Ringan"
+        }, {
+            name: "Gehu",
+            price: 8000,
+            image: "https://picsum.photos/400?random=30",
+            description: "Tahu isi sayuran digoreng crispy.",
+            stock: 40,
+            category: "Gorengan"
+        }, {
+            name: "Molen",
+            price: 6000,
+            image: "https://picsum.photos/400?random=31",
+            description: "Pisang goreng berbentuk pipih.",
+            stock: 60,
+            category: "Gorengan"
+        }, {
+            name: "Bala-bala",
+            price: 8000,
+            image: "https://picsum.photos/400?random=32",
+            description: "Bakwan sayuran gorengan.",
+            stock: 50,
+            category: "Gorengan"
+        }, {
+            name: "Pastel",
+            price: 10000,
+            image: "https://picsum.photos/400?random=33",
+            description: "Kulit pastry isi sayuran atau daging.",
+            stock: 30,
+            category: "Makanan Ringan"
+        }, {
+            name: "Kue Pancong",
+            price: 8000,
+            image: "https://picsum.photos/400?random=34",
+            description: "Kue dari santan dan gula aren.",
+            stock: 25,
+            category: "Kue"
+        }, {
+            name: "Kue Cucur",
+            price: 6000,
+            image: "https://picsum.photos/400?random=35",
+            description: "Kue cucur gula merah.",
+            stock: 30,
+            category: "Kue"
+        }, {
+            name: "Gorpey",
+            price: 5000,
+            image: "https://picsum.photos/400?random=36",
+            description: "Kerupuk geprek sambal.",
+            stock: 80,
+            category: "Kerupuk"
+        }, {
+            name: "Kerupuk Palembang",
+            price: 18000,
+            image: "https://picsum.photos/400?random=37",
+            description: "Kerupuk khas Palembang yang sangat besar.",
+            stock: 30,
+            category: "Kerupuk"
+        }, {
+            name: "Kerupuk Jabrik",
+            price: 20000,
+            image: "https://picsum.photos/400?random=38",
+            description: "Kerupuk dari tapioka dengan tekstur lembut.",
+            stock: 25,
+            category: "Kerupuk"
+        }, {
+            name: "Kopi Luak",
+            price: 50000,
+            image: "https://picsum.photos/400?random=39",
+            description: "Kopi premium dari biji yang dimakan luak.",
+            stock: 10,
+            category: "Minuman"
+        }, {
+            name: "Kue Brownies",
+            price: 30000,
+            image: "https://picsum.photos/400?random=40",
+            description: "Brownies cokelat lembut.",
+            stock: 20,
+            category: "Kue"
+        }, {
+            name: "Choco Banana",
+            price: 12000,
+            image: "https://picsum.photos/400?random=41",
+            description: "Pisang lure dengan taburan cokelat.",
+            stock: 35,
+            category: "Gorengan"
+        }, {
+            name: "Tahu Walik",
+            price: 10000,
+            image: "https://picsum.photos/400?random=42",
+            description: "Tahu dibalik isian ayam.",
+            stock: 40,
+            category: "Gorengan"
+        }, {
+            name: "Mie Goreng",
+            price: 15000,
+            image: "https://picsum.photos/400?random=43",
+            description: "Mie goreng dengan bumbu kecap.",
+            stock: 45,
+            category: "Mie"
+        }, {
+            name: "Mie Rebus",
+            price: 15000,
+            image: "https://picsum.photos/400?random=44",
+            description: "Mie rebus dengan kuah gurih.",
+            stock: 45,
+            category: "Mie"
+        }, {
+            name: "Keripik Jamur",
+            price: 18000,
+            image: "https://picsum.photos/400?random=45",
+            description: "Keripik dari jamur tiram yang digoreng renyah.",
+            stock: 30,
+            category: "Keripik"
+        }, {
+            name: "Keripik Talas",
+            price: 14000,
+            image: "https://picsum.photos/400?random=46",
+            description: "Keripik dari talas atau keladi.",
+            stock: 35,
+            category: "Keripik"
+        }, {
+            name: "Keripik Nangka",
+            price: 16000,
+            image: "https://picsum.photos/400?random=47",
+            description: "Keripik dari buah nangka muda.",
+            stock: 30,
+            category: "Keripik"
+        }, {
+            name: "Kue Talam",
+            price: 10000,
+            image: "https://picsum.photos/400?random=48",
+            description: "Kue talam pandan dengan taburan parut.",
+            stock: 25,
+            category: "Kue"
+        }, {
+            name: "Bolu Kukus",
+            price: 12000,
+            image: "https://picsum.photos/400?random=49",
+            description: "Bolu kukus mekar dengan topping meses.",
+            stock: 30,
+            category: "Kue"
+        }, {
+            name: "Kue Jongkong",
+            price: 8000,
+            image: "https://picsum.photos/400?random=50",
+            description: "Kue lembut dari tepung kanji dengan kuah santan.",
+            stock: 25,
+            category: "Kue"
+        }];
+
+        // Display products list
+        const productsList = document.getElementById('productsList');
+        let productsHTML = '<h3>Daftar 50 Produk:</h3>';
+        snackProducts.forEach((product, index) => {
+            productsHTML += `
+                <div class="product-item">
+                    <span class="product-name">${index + 1}. ${product.name}</span>
+                    <span class="product-price">Rp ${product.price.toLocaleString('id-ID')}</span>
+                </div>
+            `;
+        });
+        productsList.innerHTML = productsHTML;
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function startUpload() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            const status = document.getElementById('status');
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '⏳ Mengupload...';
+
+            status.className = 'status loading';
+            status.textContent = 'Memulai upload...';
+
+            progress.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            try {
+                const batch = db.batch();
+                const productsRef = db.collection('products');
+
+                for (let i = 0; i < snackProducts.length; i++) {
+                    const product = snackProducts[i];
+                    const productId = product.name.toLowerCase().replace(/\s+/g, '-');
+                    const docRef = productsRef.doc(productId);
+                    batch.set(docRef, product);
+
+                    // Update progress
+                    const percent = ((i + 1) / snackProducts.length) * 100;
+                    progressBar.style.width = percent + '%';
+
+                    // Small delay to show progress
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+
+                await batch.commit();
+
+                status.className = 'status success';
+                status.textContent = '✅ Berhasil mengupload ' + snackProducts.length + ' produk ke Firestore!';
+                uploadBtn.textContent = '✅ Upload Selesai';
+
+                console.log('Successfully uploaded all products!');
+
+            } catch (error) {
+                console.error('Error uploading products:', error);
+                status.className = 'status error';
+                status.textContent = '❌ Error: ' + error.message;
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '🚀 Upload Semua Produk';
+            }
+        }
+    </script>
+</body>
+
+</html>
