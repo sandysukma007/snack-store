@@ -17,6 +17,9 @@ const firebaseConfig = {
     measurementId: "G-FJE4YQFG6Y"
 };
 
+// Vercel API URL - Replace with your deployed URL
+const API_URL = 'https://snack-store.vercel.app/api/create-transaction';
+
 // ============================================
 // App State
 // ============================================
@@ -409,27 +412,38 @@ if (cartPanel) {
 }
 
 // ============================================
-// Midtrans: Create Transaction (Demo Mode)
+// Midtrans: Create Transaction via Vercel API
 // ============================================
 
 async function createMidtransTransaction(orderId, amount, customerName) {
-    // DEMO MODE - For testing only
-    // In production, replace with actual backend call
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                order_id: orderId,
+                amount: amount,
+                customer_name: customerName
+            })
+        });
 
-    console.log('Creating demo transaction:', { orderId, amount, customerName });
+        const data = await response.json();
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to create transaction');
+        }
 
-    // Return mock response
-    return {
-        token: 'demo-token-' + Date.now(),
-        redirect_url: null
-    };
+        return data;
+    } catch (error) {
+        console.error('Error creating transaction:', error);
+        throw error;
+    }
 }
 
 // ============================================
-// Checkout with Midtrans (Demo Mode)
+// Checkout with Midtrans
 // ============================================
 
 checkoutBtn.addEventListener('click', async (event) => {
@@ -467,7 +481,7 @@ checkoutBtn.addEventListener('click', async (event) => {
             customerName
         });
 
-        // Call function to create Midtrans transaction
+        // Call Vercel API to create Midtrans transaction
         const transaction = await createMidtransTransaction(
             orderId,
             totalAmount,
@@ -476,11 +490,42 @@ checkoutBtn.addEventListener('click', async (event) => {
 
         console.log('Transaction created:', transaction);
 
-        // For demo, show success immediately
-        showToast('Payment successful! Thank you for your order.', 'success');
-
-        // Clear cart and close modal
-        clearCart();
+        // Check if Snap token is available
+        if (transaction.token) {
+            // Use Midtrans Snap to display payment page
+            if (window.snap) {
+                window.snap.pay(transaction.token, {
+                    onSuccess: function(result) {
+                        console.log('Payment success:', result);
+                        showToast('Payment successful! Thank you for your order.', 'success');
+                        clearCart();
+                    },
+                    onPending: function(result) {
+                        console.log('Payment pending:', result);
+                        showToast('Payment pending. Please complete your payment.', 'info');
+                    },
+                    onError: function(result) {
+                        console.error('Payment error:', result);
+                        showToast('Payment failed. Please try again.', 'error');
+                    },
+                    onClose: function() {
+                        console.log('Payment popup closed');
+                        showToast('Payment was cancelled', 'info');
+                    }
+                });
+            } else {
+                // Fallback: If Snap is not loaded, redirect to URL
+                if (transaction.redirect_url) {
+                    window.location.href = transaction.redirect_url;
+                } else {
+                    showToast('Payment successful! Thank you for your order.', 'success');
+                    clearCart();
+                }
+            }
+        } else {
+            showToast('Payment successful! Thank you for your order.', 'success');
+            clearCart();
+        }
 
         // Reset button state
         isProcessingPayment = false;
