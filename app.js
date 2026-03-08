@@ -25,6 +25,7 @@ const API_URL = 'https://snack-store-psi.vercel.app/api/create-transaction';
 // ============================================
 let cart = [];
 let products = [];
+let filteredProducts = [];
 let isProcessingPayment = false;
 
 // ============================================
@@ -43,6 +44,10 @@ const loadingState = document.getElementById('loadingState');
 const errorState = document.getElementById('errorState');
 const emptyState = document.getElementById('emptyState');
 const emptyCart = document.getElementById('emptyCart');
+const searchInput = document.getElementById('searchInput');
+const sortSelect = document.getElementById('sortSelect');
+const resultsInfo = document.getElementById('resultsInfo');
+const resultsCount = document.getElementById('resultsCount');
 
 // ============================================
 // Initialize App
@@ -51,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeFirebase();
     loadProducts();
     updateCartUI();
+    setupSearchAndSort();
 });
 
 // ============================================
@@ -79,6 +85,7 @@ async function loadProducts() {
         productsGrid.classList.add('hidden');
         errorState.classList.add('hidden');
         emptyState.classList.add('hidden');
+        resultsInfo.classList.add('hidden');
 
         // Fetch products from Firestore
         const snapshot = await window.db.collection('products').get();
@@ -98,7 +105,11 @@ async function loadProducts() {
             ...doc.data()
         }));
 
-        displayProducts(products);
+        // Initialize filtered products
+        filteredProducts = [...products];
+
+        displayProducts(filteredProducts);
+        updateResultsInfo();
 
     } catch (error) {
         console.error('Error loading products:', error);
@@ -108,10 +119,116 @@ async function loadProducts() {
 }
 
 // ============================================
+// Search & Sort Functionality
+// ============================================
+
+// Setup search and sort event listeners
+function setupSearchAndSort() {
+    // Search input event
+    searchInput.addEventListener('input', handleSearch);
+
+    // Sort select event
+    sortSelect.addEventListener('change', handleSort);
+}
+
+// Handle search functionality
+function handleSearch(e) {
+    const searchTerm = e.target.value.toLowerCase().trim();
+
+    // Filter products based on search term
+    if (searchTerm === '') {
+        filteredProducts = [...products];
+    } else {
+        filteredProducts = products.filter(product => {
+            const name = product.name ? product.name.toLowerCase() : '';
+            const description = product.description ? product.description.toLowerCase() : '';
+            return name.includes(searchTerm) || description.includes(searchTerm);
+        });
+    }
+
+    // Apply current sort after search
+    applySort(sortSelect.value);
+
+    // Display filtered results
+    displayProducts(filteredProducts);
+    updateResultsInfo();
+}
+
+// Handle sort functionality
+function handleSort(e) {
+    const sortValue = e.target.value;
+    applySort(sortValue);
+    displayProducts(filteredProducts);
+    updateResultsInfo();
+}
+
+// Apply sorting to filtered products
+function applySort(sortValue) {
+    switch (sortValue) {
+        case 'price-low':
+            filteredProducts.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+            break;
+        case 'price-high':
+            filteredProducts.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+            break;
+        case 'name-asc':
+            filteredProducts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            break;
+        case 'name-desc':
+            filteredProducts.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+            break;
+        default:
+            // Default: keep original order
+            filteredProducts = [...products];
+            // Re-apply search filter if any
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            if (searchTerm !== '') {
+                filteredProducts = filteredProducts.filter(product => {
+                    const name = product.name ? product.name.toLowerCase() : '';
+                    const description = product.description ? product.description.toLowerCase() : '';
+                    return name.includes(searchTerm) || description.includes(searchTerm);
+                });
+            }
+            break;
+    }
+}
+
+// Update results info display
+function updateResultsInfo() {
+    const searchTerm = searchInput.value.trim();
+    const sortValue = sortSelect.value;
+
+    // Only show results info if there's a search term or non-default sort
+    if (searchTerm !== '' || sortValue !== 'default') {
+        resultsInfo.classList.remove('hidden');
+        resultsCount.textContent = filteredProducts.length;
+
+        if (filteredProducts.length === 0) {
+            resultsInfo.innerHTML = '<span>0</span> products found';
+        } else {
+            resultsInfo.innerHTML = 'Showing <span>' + filteredProducts.length + '</span> products';
+        }
+    } else {
+        resultsInfo.classList.add('hidden');
+    }
+}
+
+// ============================================
 // Display Products in Grid
 // ============================================
 function displayProducts(products) {
     productsGrid.innerHTML = '';
+
+    // Handle empty results
+    if (products.length === 0) {
+        productsGrid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        emptyState.innerHTML = '<p>No products found. Try a different search term.</p>';
+        return;
+    }
+
+    emptyState.classList.add('hidden');
+    productsGrid.classList.remove('hidden');
 
     products.forEach(product => {
         const card = document.createElement('div');
@@ -157,8 +274,6 @@ function displayProducts(products) {
 
         productsGrid.appendChild(card);
     });
-
-    productsGrid.classList.remove('hidden');
 }
 
 // ============================================
@@ -758,14 +873,14 @@ function showToast(message, type = 'info') {
     // Style based on type
     switch (type) {
         case 'success':
-            toast.style.backgroundColor = '#10b981';
+            toast.style.background = 'linear-gradient(135deg, #10b981, #059669)';
             break;
         case 'error':
-            toast.style.backgroundColor = '#ef4444';
+            toast.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
             break;
         case 'info':
         default:
-            toast.style.backgroundColor = '#1f2937';
+            toast.style.background = 'linear-gradient(135deg, #7c3aed, #6d28d9)';
     }
 
     document.body.appendChild(toast);

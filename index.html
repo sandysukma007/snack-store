@@ -54,6 +54,32 @@
         <section class="products-section">
             <h2 class="section-title">Our Products</h2>
 
+            <!-- Search & Filter Bar -->
+            <div class="filter-bar">
+                <div class="search-container">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
+                </div>
+
+                <div class="sort-container">
+                    <label for="sortSelect" class="sort-label">Sort by:</label>
+                    <select id="sortSelect" class="sort-select">
+                        <option value="default">Default</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="name-asc">Name: A to Z</option>
+                        <option value="name-desc">Name: Z to A</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Results Info -->
+            <div id="resultsInfo" class="results-info hidden">
+                Showing <span id="resultsCount">0</span> products
+            </div>
+
             <!-- Loading State -->
             <div id="loadingState" class="loading-spinner">
                 <div class="spinner"></div>
