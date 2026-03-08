@@ -1,8 +1,7 @@
 /**
  * Vercel API Route for Midtrans Transaction
+ * Using native fetch instead of axios
  */
-
-const axios = require('axios');
 
 export default async function handler(req, res) {
     // Set CORS headers
@@ -25,8 +24,6 @@ export default async function handler(req, res) {
     try {
         const { order_id, amount, customer_name } = req.body;
 
-        console.log('Received request:', { order_id, amount, customer_name });
-
         if (!order_id || !amount) {
             return res.status(400).json({
                 error: 'order_id and amount are required'
@@ -36,43 +33,47 @@ export default async function handler(req, res) {
         // Get Server Key from environment variable
         const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY;
 
-        console.log('Server Key exists:', !!MIDTRANS_SERVER_KEY);
-
         if (!MIDTRANS_SERVER_KEY) {
             return res.status(500).json({ error: 'Server key not configured' });
         }
 
-        // Create transaction token from Midtrans
+        // Create transaction token from Midtrans using fetch
         const authString = Buffer.from(MIDTRANS_SERVER_KEY + ':').toString('base64');
 
-        console.log('Calling Midtrans API...');
-
-        const response = await axios.post(
+        const midtransResponse = await fetch(
             'https://app.midtrans.com/snap/v1/transactions',
             {
-                transaction_details: {
-                    order_id: order_id,
-                    gross_amount: parseInt(amount)
-                },
-                customer_details: {
-                    name: customer_name || 'Customer'
-                }
-            },
-            {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Basic ${authString}`
-                }
+                },
+                body: JSON.stringify({
+                    transaction_details: {
+                        order_id: order_id,
+                        gross_amount: parseInt(amount)
+                    },
+                    customer_details: {
+                        name: customer_name || 'Customer'
+                    }
+                })
             }
         );
 
-        console.log('Midtrans response:', response.data);
+        const data = await midtransResponse.json();
 
-        res.status(200).json(response.data);
+        if (!midtransResponse.ok) {
+            return res.status(500).json({
+                error: data.status_message || 'Failed to create transaction',
+                details: data
+            });
+        }
+
+        res.status(200).json(data);
     } catch (error) {
-        console.error('Midtrans Error:', error.response?.data || error.message);
+        console.error('Midtrans Error:', error);
         res.status(500).json({
-            error: error.response?.data?.status_message || 'Failed to create transaction',
+            error: 'Failed to create transaction',
             details: error.message
         });
     }
