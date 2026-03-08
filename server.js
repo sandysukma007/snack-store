@@ -12,8 +12,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Midtrans Server Key (from your Midtrans Dashboard)
-const MIDTRANS_SERVER_KEY = 'SB-Mid-server-dVZpPZF0zI2M8Smj';
+// Midtrans Server Key - use environment variable for security
+// Set MIDTRANS_SERVER_KEY in your deployment platform (Render/Railway)
+const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || 'your-server-key-here';
 const MIDTRANS_API_URL = 'https://app.midtrans.com/snap/v1/transactions';
 
 // Health check endpoint
