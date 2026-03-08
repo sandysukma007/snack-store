@@ -204,9 +204,9 @@ function updateResultsInfo() {
         resultsCount.textContent = filteredProducts.length;
 
         if (filteredProducts.length === 0) {
-            resultsInfo.innerHTML = '<span>0</span> products found';
+            resultsInfo.innerHTML = '<span>0</span> produk ditemukan';
         } else {
-            resultsInfo.innerHTML = 'Showing <span>' + filteredProducts.length + '</span> products';
+            resultsInfo.innerHTML = 'Menampilkan <span>' + filteredProducts.length + '</span> produk';
         }
     } else {
         resultsInfo.classList.add('hidden');
@@ -223,7 +223,7 @@ function displayProducts(products) {
     if (products.length === 0) {
         productsGrid.classList.add('hidden');
         emptyState.classList.remove('hidden');
-        emptyState.innerHTML = '<p>No products found. Try a different search term.</p>';
+        emptyState.innerHTML = '<p>Produk tidak ditemukan. Coba kata kunci lain.</p>';
         return;
     }
 
@@ -236,14 +236,14 @@ function displayProducts(products) {
 
         // Determine stock status
         let stockClass = 'stock-available';
-        let stockText = 'In Stock';
+        let stockText = 'Tersedia';
 
         if (product.stock <= 0) {
             stockClass = 'stock-out';
-            stockText = 'Out of Stock';
+            stockText = 'Stok Habis';
         } else if (product.stock <= 5) {
             stockClass = 'stock-low';
-            stockText = `Only ${product.stock} left!`;
+            stockText = `Tersisa ${product.stock}!`;
         }
 
         card.innerHTML = `
@@ -257,7 +257,7 @@ function displayProducts(products) {
             <!-- Product Info -->
             <div class="product-info">
                 <h3 class="product-name">${product.name}</h3>
-                <p class="product-description">${product.description || 'No description available'}</p>
+                <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
 
                 <div class="product-footer">
                     <span class="product-price">Rp ${parseFloat(product.price).toLocaleString('id-ID')}</span>
@@ -267,7 +267,7 @@ function displayProducts(products) {
                 <button onclick="addToCart('${product.id}')"
                         class="btn-add-to-cart"
                         ${product.stock <= 0 ? 'disabled' : ''}>
-                    ${product.stock > 0 ? 'Add to Cart' : 'Sold Out'}
+                    ${product.stock > 0 ? 'Tambah ke Keranjang' : 'Habis'}
                 </button>
             </div>
         `;
@@ -285,12 +285,12 @@ function addToCart(productId) {
     const product = products.find(p => p.id === productId);
 
     if (!product) {
-        showToast('Product not found!', 'error');
+        showToast('Produk tidak ditemukan!', 'error');
         return;
     }
 
     if (product.stock <= 0) {
-        showToast('Product is out of stock!', 'error');
+        showToast('Produk sedang stok habis!', 'error');
         return;
     }
 
@@ -302,7 +302,7 @@ function addToCart(productId) {
         if (existingItem.quantity < product.stock) {
             existingItem.quantity++;
         } else {
-            showToast('Maximum stock reached!', 'error');
+            showToast('Stok maksimum tercapai!', 'error');
             return;
         }
     } else {
@@ -323,7 +323,7 @@ function addToCart(productId) {
     updateCartUI();
 
     // Show success feedback
-    showToast(`${product.name} added to cart!`, 'success');
+    showToast(`${product.name} ditambahkan ke keranjang!`, 'success');
 }
 
 // Remove product from cart
@@ -332,32 +332,29 @@ function removeFromCart(productId) {
         cart = cart.filter(item => item.id !== productId);
         saveCart();
         updateCartUI();
-        showToast('Item removed from cart', 'info');
+        showToast('Item dihapus dari keranjang', 'info');
     } catch (error) {
         console.error('Error removing item from cart:', error);
-        showToast('Error removing item', 'error');
+        showToast('Gagal menghapus item', 'error');
     }
 }
 
 // Update product quantity
 function updateQuantity(productId, change) {
-    try {
-        const item = cart.find(item => item.id === productId);
+    const item = cart.find(item => item.id === productId);
 
-        if (item) {
-            const newQuantity = item.quantity + change;
+    if (item) {
+        const newQuantity = item.quantity + change;
 
-            if (newQuantity <= 0) {
-                removeFromCart(productId);
-            } else if (newQuantity <= item.stock) {
-                item.quantity = newQuantity;
-                saveCart();
-                updateCartUI();
-            }
+        if (newQuantity <= 0) {
+            removeFromCart(productId);
+        } else if (newQuantity <= item.stock) {
+            item.quantity = newQuantity;
+            saveCart();
+            updateCartUI();
+        } else {
+            showToast('Stok maksimum tercapai!', 'error');
         }
-    } catch (error) {
-        console.error('Error updating quantity:', error);
-        showToast('Error updating quantity', 'error');
     }
 }
 
@@ -431,12 +428,13 @@ function renderCartItems() {
 
                 <!-- Quantity Controls -->
                 <div class="quantity-controls">
-                    <button type="button" data-action="decrease" data-id="${item.id}"
-                            class="btn-quantity">
+                    <button type="button" onclick="updateQuantity('${item.id}', -1)"
+                            class="btn-quantity"
+                            ${item.quantity <= 1 ? 'disabled' : ''}>
                         -
                     </button>
                     <span class="quantity-value">${item.quantity}</span>
-                    <button type="button" data-action="increase" data-id="${item.id}"
+                    <button type="button" onclick="updateQuantity('${item.id}', 1)"
                             class="btn-quantity"
                             ${isMaxQuantity ? 'disabled' : ''}>
                         +
@@ -445,10 +443,10 @@ function renderCartItems() {
             </div>
 
             <!-- Remove Button -->
-            <button type="button" data-action="remove" data-id="${item.id}"
+            <button type="button" onclick="removeFromCart('${item.id}')"
                     class="btn-remove"
-                    title="Remove item">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    title="Hapus item">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
             </button>
@@ -457,31 +455,6 @@ function renderCartItems() {
         cartItems.appendChild(cartItem);
     });
 }
-
-// Event delegation for cart item buttons
-document.addEventListener('click', function(event) {
-    const target = event.target;
-
-    // Find the closest button if clicked on SVG or other element
-    const button = target.closest('button');
-    if (!button) return;
-
-    const action = button.dataset.action;
-    const productId = button.dataset.id;
-
-    if (!action || !productId) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (action === 'increase') {
-        updateQuantity(productId, 1);
-    } else if (action === 'decrease') {
-        updateQuantity(productId, -1);
-    } else if (action === 'remove') {
-        removeFromCart(productId);
-    }
-});
 
 // ============================================
 // Modal Functions
@@ -575,7 +548,7 @@ checkoutBtn.addEventListener('click', async (event) => {
     event.stopPropagation();
 
     if (cart.length === 0) {
-        showToast('Your cart is empty!', 'error');
+        showToast('Keranjang Anda kosong!', 'error');
         return;
     }
 
@@ -610,7 +583,7 @@ checkoutBtn.addEventListener('click', async (event) => {
         // Show loading state
         isProcessingPayment = true;
         checkoutBtn.disabled = true;
-        checkoutBtn.textContent = 'Processing...';
+        checkoutBtn.textContent = 'Memproses...';
 
         console.log('Creating transaction with:', {
             orderId,
@@ -638,11 +611,11 @@ checkoutBtn.addEventListener('click', async (event) => {
                     },
                     onPending: function(result) {
                         console.log('Payment pending:', result);
-                        showToast('Payment pending. Please complete your payment.', 'info');
+                        showToast('Pembayaran tertunda. Silakan selesaikan pembayaran Anda.', 'info');
                     },
                     onError: function(result) {
                         console.error('Payment error:', result);
-                        showToast('Payment failed. Please try again.', 'error');
+                        showToast('Pembayaran gagal. Silakan coba lagi.', 'error');
                     },
                     onClose: function() {
                         console.log('Payment popup closed');
@@ -663,16 +636,16 @@ checkoutBtn.addEventListener('click', async (event) => {
         // Reset button state
         isProcessingPayment = false;
         checkoutBtn.disabled = false;
-        checkoutBtn.textContent = 'Checkout with Midtrans';
+        checkoutBtn.textContent = 'Bayar Sekarang';
 
     } catch (error) {
         console.error('Checkout error:', error);
-        showToast('Checkout error: ' + error.message, 'error');
+        showToast('Kesalahan checkout: ' + error.message, 'error');
 
         // Reset payment state on error
         isProcessingPayment = false;
         checkoutBtn.disabled = false;
-        checkoutBtn.textContent = 'Checkout with Midtrans';
+        checkoutBtn.textContent = 'Bayar Sekarang';
     }
 });
 
@@ -701,21 +674,21 @@ function showPaymentSuccessModal(orderId, amount) {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <h2 class="payment-success-title">Payment Successful!</h2>
-                <p class="payment-success-message">Thank you for your order</p>
+                <h2 class="payment-success-title">Pembayaran Berhasil!</h2>
+                <p class="payment-success-message">Terima kasih atas pesanan Anda</p>
 
                 <div class="invoice">
                     <h3 class="invoice-title">Invoice</h3>
                     <div class="invoice-details">
                         <p><strong>Order ID:</strong> ${orderId}</p>
-                        <p><strong>Date:</strong> ${currentTransaction.date}</p>
+                        <p><strong>Tanggal:</strong> ${currentTransaction.date}</p>
                     </div>
                     <table class="invoice-table">
                         <thead>
                             <tr>
                                 <th>Item</th>
-                                <th>Qty</th>
-                                <th>Price</th>
+                                <th>Jml</th>
+                                <th>Harga</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -741,10 +714,10 @@ function showPaymentSuccessModal(orderId, amount) {
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
-                        Print Invoice
+                        Cetak Invoice
                     </button>
                     <button onclick="closePaymentModalAndRedirect()" class="btn-back-home">
-                        Back to Home
+                        Kembali ke Beranda
                     </button>
                 </div>
             </div>
@@ -804,14 +777,14 @@ function printInvoice() {
             </div>
             <div class="invoice-info">
                 <p><strong>Order ID:</strong> ${currentTransaction.orderId}</p>
-                <p><strong>Date:</strong> ${currentTransaction.date}</p>
+                <p><strong>Tanggal:</strong> ${currentTransaction.date}</p>
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>Item</th>
-                        <th>Qty</th>
-                        <th>Price</th>
+                        <th>Jml</th>
+                        <th>Harga</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -28,11 +28,11 @@
             <div class="navbar-content">
                 <!-- Logo -->
                 <div class="logo">
-                    <span class="logo-text">🍿 Snack Store</span>
+                    <span class="logo-text">Snack Store</span>
                 </div>
 
                 <!-- Cart Icon -->
-                <button id="cartButton" class="cart-button" title="Open Cart">
+                <button id="cartButton" class="cart-button" title="Buka Keranjang">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
@@ -46,13 +46,13 @@
     <main class="flex-grow">
         <!-- Hero Section -->
         <section class="hero">
-            <h1 class="hero-title">Welcome to Snack Store</h1>
-            <p class="hero-subtitle">Discover our delicious collection of snacks</p>
+            <h1 class="hero-title">Selamat Datang di Snack Store</h1>
+            <p class="hero-subtitle">Temukan berbagai camilan lezat kami</p>
         </section>
 
         <!-- Products Section -->
         <section class="products-section">
-            <h2 class="section-title">Our Products</h2>
+            <h2 class="section-title">Produk Kami</h2>
 
             <!-- Search & Filter Bar -->
             <div class="filter-bar">
@@ -60,24 +60,24 @@
                     <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Cari produk...">
                 </div>
 
                 <div class="sort-container">
-                    <label for="sortSelect" class="sort-label">Sort by:</label>
+                    <label for="sortSelect" class="sort-label">Urutkan:</label>
                     <select id="sortSelect" class="sort-select">
                         <option value="default">Default</option>
-                        <option value="price-low">Price: Low to High</option>
-                        <option value="price-high">Price: High to Low</option>
-                        <option value="name-asc">Name: A to Z</option>
-                        <option value="name-desc">Name: Z to A</option>
+                        <option value="price-low">Harga: Rendah ke Tinggi</option>
+                        <option value="price-high">Harga: Tinggi ke Rendah</option>
+                        <option value="name-asc">Nama: A ke Z</option>
+                        <option value="name-desc">Nama: Z ke A</option>
                     </select>
                 </div>
             </div>
 
             <!-- Results Info -->
             <div id="resultsInfo" class="results-info hidden">
-                Showing <span id="resultsCount">0</span> products
+                Menampilkan <span id="resultsCount">0</span> produk
             </div>
 
             <!-- Loading State -->
@@ -92,12 +92,12 @@
 
             <!-- Error State -->
             <div id="errorState" class="state-message error hidden">
-                <p>Failed to load products. Please try again later.</p>
+                <p>Gagal memuat produk. Silakan coba lagi nanti.</p>
             </div>
 
             <!-- Empty State -->
             <div id="emptyState" class="state-message empty hidden">
-                <p>No products available at the moment.</p>
+                <p>Tidak ada produk yang tersedia saat ini.</p>
             </div>
         </section>
     </main>
@@ -105,8 +105,8 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <p class="footer-text">© 2024 Snack Store. All rights reserved.</p>
-            <p class="footer-text">Made with ❤️ for snack lovers</p>
+            <p class="footer-text">© 2024 Snack Store. Semua hak dilindungi.</p>
+            <p class="footer-text">Dibuat dengan ❤️ untuk pecinta camilan</p>
         </div>
     </footer>
 
@@ -120,8 +120,8 @@
             <div class="cart-container">
                 <!-- Cart Header -->
                 <div class="cart-header">
-                    <h2 class="cart-title">🛒 Your Cart</h2>
-                    <button id="closeCart" class="btn-close" title="Close Cart">
+                    <h2 class="cart-title">Keranjang Anda</h2>
+                    <button id="closeCart" class="btn-close" title="Tutup Keranjang">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -135,7 +135,7 @@
 
                 <!-- Empty Cart Message -->
                 <div id="emptyCart" class="cart-empty hidden">
-                    <p>Your cart is empty</p>
+                    <p>Keranjang Anda kosong</p>
                 </div>
 
                 <!-- Cart Footer -->
@@ -147,7 +147,7 @@
 
                     <!-- Checkout Button -->
                     <button id="checkoutBtn" class="btn-checkout">
-                        Checkout with Midtrans
+                        Bayar Sekarang
                     </button>
                 </div>
             </div>
