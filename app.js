@@ -651,6 +651,9 @@ checkoutBtn.addEventListener('click', async (event) => {
 
 // Handle successful payment
 function handlePaymentSuccess(result, orderId, amount) {
+    // Reduce stock in Firestore
+    reduceStockOnPurchase(currentTransaction.items);
+
     // Close cart modal
     closeCartModal();
 
@@ -661,6 +664,44 @@ function handlePaymentSuccess(result, orderId, amount) {
     cart = [];
     saveCart();
     updateCartUI();
+}
+
+// Reduce stock in Firestore after successful purchase
+async function reduceStockOnPurchase(items) {
+    if (!window.db) {
+        console.warn('Firestore not initialized');
+        return;
+    }
+
+    try {
+        const db = window.db;
+        const batch = db.batch();
+
+        for (const item of items) {
+            const productRef = db.collection('products').doc(item.id);
+
+            // Get current stock
+            const productDoc = await productRef.get();
+
+            if (productDoc.exists) {
+                const currentStock = productDoc.data().stock || 0;
+                const newStock = Math.max(0, currentStock - item.quantity);
+
+                // Update stock
+                batch.update(productRef, { stock: newStock });
+            }
+        }
+
+        // Commit batch update
+        await batch.commit();
+        console.log('Stock updated successfully');
+
+        // Reload products to reflect new stock
+        loadProducts();
+
+    } catch (error) {
+        console.error('Error reducing stock:', error);
+    }
 }
 
 // Show payment success modal with invoice
@@ -840,21 +881,8 @@ function showToast(message, type = 'info') {
 
     // Create toast element
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = `toast ${type}`;
     toast.textContent = message;
-
-    // Style based on type
-    switch (type) {
-        case 'success':
-            toast.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-            break;
-        case 'error':
-            toast.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-            break;
-        case 'info':
-        default:
-            toast.style.background = 'linear-gradient(135deg, #7c3aed, #6d28d9)';
-    }
 
     document.body.appendChild(toast);
 
